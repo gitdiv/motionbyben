@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotionbyBen - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=MuseoModerno:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="styles/style.css" />
+</head>
+
+<body>
+    <canvas id="gradientCanvas"></canvas>
+
+
+    <header>
+        <div class="logo museomoderno-head">MotionbyBen</div>
+        <nav>
+            <a class="museomoderno-head"  href="index.html">Home</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="bio-container">
+            <img src="images/benjamin.jpeg" alt="Benjamin D'souza" class="bio-image">
+            <div class="bio-content">
+                <h2>Hi, I'm Benjamin D'souza.</h2>
+                <p>
+                    I'm a motion graphic animator with a passion for creating visually stunning animations. With over 10
+                    years of experience in the industry, I have worked on a wide range of projects, from commercial
+                    advertisements to film and television.
+                </p>
+                <p>
+                    My work has been featured by top brands such as Nike, Apple, and Samsung. I specialize in creating
+                    dynamic and engaging animations that captivate audiences and tell compelling stories.
+                </p>
+                <p>
+                    When I'm not working, I enjoy exploring new animation techniques, attending industry conferences,
+                    and sharing my knowledge through workshops and online tutorials. If you'd like to discuss a project
+                    or just want to say hi, feel free to <a href="mailto:benjamin@example.com">drop me a message</a>.
+                </p>
+                <p>
+                    Check out my latest work on <a href="https://instagram.com" target="_blank">Instagram</a>, <a
+                        href="https://dribbble.com" target="_blank">Dribbble</a>, <a href="https://behance.net"
+                        target="_blank">Behance</a>, and <a href="https://linkedin.com" target="_blank">LinkedIn</a>.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('gradientCanvas');
+        const gl = canvas.getContext('webgl');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            varying vec2 v_uv;
+            void main() {
+                v_uv = a_position * 0.5 + 0.5;
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            varying vec2 v_uv;
+            uniform float u_time;
+            void main() {
+                vec2 uv = v_uv;
+                vec3 color = 0.5 + 0.5 * cos(u_time + uv.xyx + vec3(0, 2, 4));
+                gl_FragColor = vec4(color * 0.2, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile failed with: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program failed to link: ' + gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+            return program;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+
+        const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+        const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = new Float32Array([
+            -1, -1,
+            1, -1,
+            -1, 1,
+            -1, 1,
+            1, -1,
+            1, 1,
+        ]);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+        function render(time) {
+            time *= 0.001;
+
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(program);
+
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+            gl.uniform1f(timeUniformLocation, time);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        });
+    </script>
+</body>
+
+</html>
